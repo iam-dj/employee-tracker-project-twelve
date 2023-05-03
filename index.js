@@ -200,7 +200,7 @@ function addEmployee() {
       if (err) throw err;
   
       const people = results.map((result) => result.boss);
-      people.push('null');
+      people.push('nobody');
   console.log(people);
   
       inquirer
@@ -243,7 +243,7 @@ function addEmployee() {
                 type: "input",
                 name: "managerId",
                 message: "Enter the employee's manager ID:",
-                when: (answers) => answers.manager !== 'null',
+                when: (answers) => answers.manager !== 'nobody',
             },
         ])
         .then((answers) => {
