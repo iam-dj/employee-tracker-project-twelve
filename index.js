@@ -23,7 +23,6 @@ const db = mysql.createConnection(
 promptUser();
 
 function promptUser() {
-  // Prompt user for input
   inquirer
     .prompt([
       {
@@ -43,7 +42,6 @@ function promptUser() {
       },
     ])
     .then(function (answer) {
-      // Switch case to handle user input
       switch (answer.whatToDo) {
         case "View All Employees":
           viewAllEmployees();
@@ -123,26 +121,21 @@ function updateEmployeeRole() {
   
 
   function viewAllRoles() {
-    // Query to fetch all roles
     const sql = `SELECT role.title AS title, department.name AS department, role.salary
     FROM role
     LEFT JOIN department ON role.department_id = department.id
     ORDER BY role.salary DESC`;
   
-    // Execute the query
     db.query(sql, (err, results) => {
       if (err) throw err;
   
-      // Display the results
       console.table(results);
   
-      // Call the function to display the menu again
       promptUser();
     });
   }
 
   function addRole() {
-    // prompt the user for information about the new role
     inquirer
       .prompt([
         {
@@ -163,7 +156,6 @@ function updateEmployeeRole() {
         },
       ])
       .then((answers) => {
-        // query the database to insert the new role
         const query = `
           INSERT INTO role (title, salary, department_id)
           VALUES (?, ?, (SELECT id FROM department WHERE name = ?))
@@ -171,7 +163,6 @@ function updateEmployeeRole() {
         const values = [answers.title, answers.salary, answers.department];
         db.query(query, values, (err, res) => {
           if (err) throw err;
-          // call the main menu again
           promptUser();
         });
       });
@@ -186,111 +177,23 @@ function updateEmployeeRole() {
   
       console.table(results);
   
-      // call the main menu function to allow the user to make another selection
       promptUser();
     });
   }
 
   
-//   function addEmployee() {
-//     // Prompt the user to enter employee details
-//     inquirer
-//       .prompt([
-//         {
-//           type: "input",
-//           name: "firstName",
-//           message: "Enter the employee's first name:",
-//         },
-//         {
-//           type: "input",
-//           name: "lastName",
-//           message: "Enter the employee's last name:",
-//         },
-//         {
-//           type: "list",
-//           name: "role",
-//           message: "Select the employee's role:",
-//           choices: [
-//             "Sales",
-//             "IT",
-//             "Marketing",
-//             "CEO",
-//             "HR",
-//             "CFO",
-//             "CTO",
-//             "CBO",
-//             "Accountant",
-//             "CMO",
-//           ],
-//         },
-//         {
-//           type: "input",
-//           name: "managerId",
-//           message: "Enter the employee's manager ID (if applicable):",
-//         },
-//       ])
-//       .then((answers) => {
-//         // Insert the employee into the database
-//         let roleId;
-
-//         switch (answers.role) {
-//           case "CEO":
-//             roleId = 1;
-//             break;
-//           case "HR":
-//             roleId = 2;
-//             break;
-//           case "Sales":
-//             roleId = 3;
-//             break;
-//           case "CBO":
-//             roleId = 4;
-//             break;
-//           case "CFO":
-//             roleId = 5;
-//             break;
-//           case "Accountant":
-//             roleId = 6;
-//             break;
-//           case "IT":
-//             roleId = 7;
-//             break;
-//           case "CTO":
-//             roleId = 8;
-//             break;
-//           case "Marketing":
-//             roleId = 9;
-//             break;
-//           case "CMO":
-//             roleId = 10;
-//             break;
-//           default:
-//             roleId = null;
-//             break;
-//         }
-        
-//         const query =
-//           "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
-//         db.query(
-//           query,
-//           [answers.firstName, answers.lastName, roleId, answers.managerId],
-//           (err, res) => {
-//             if (err) throw err;
-//             // Show the main menu again
-//             promptUser();
-//           }
-//         );
-//       });
-//   }
 
 function addEmployee() {
-    // Prompt the user to enter employee details
     db.query("SELECT title FROM role", function (err, results) {
       if (err) throw err;
   
       const choices = results.map((result) => result.title);
 
-      
+    db.query(`SELECT manager_id, CONCAT(first_name, ' ', last_name) AS boss FROM employee
+    `, function (err, results) {
+      if (err) throw err;
+  
+      const people = results.map((result) => result.boss);
   
       inquirer
         .prompt([
@@ -311,13 +214,18 @@ function addEmployee() {
             choices: choices,
           },
           {
-            type: "input",
-            name: "managerId",
-            message: "Enter the employee's manager ID (if applicable):",
-          },
+              type: "rawlist",
+              name: "manager",
+              message: "Select your bosses name (Note the # is also their Manager ID)",
+              choices: people,
+            },
+            {
+                type: "input",
+                name: "managerId",
+                message: "Enter the employee's manager ID (if applicable):",
+            },
         ])
         .then((answers) => {
-          // Insert the employee into the database
          
           const query2 = "SELECT id FROM role WHERE title = ?";
           db.query(query2, [answers.role], (err, res) => {
@@ -325,7 +233,6 @@ function addEmployee() {
               throw err;
             }
             roleId = res[0].id;
-        // });
             
             const query =
             "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
@@ -334,11 +241,11 @@ function addEmployee() {
                 [answers.firstName, answers.lastName, roleId, answers.managerId],
                 (err, res) => {
                     if (err) throw err;
-                    // Show the main menu again
                     promptUser();
                 }
                 );
             });
+        });
         });
         });
   }
@@ -347,7 +254,6 @@ function addEmployee() {
   
 
 function addDepartment() {
-  // code to add a new department
   inquirer
   .prompt({
     type: "input",
@@ -355,11 +261,9 @@ function addDepartment() {
     message: "Enter the name of the department:",
   })
   .then((answer) => {
-    // insert the department into the database
     const query = `INSERT INTO department (name) VALUES ('${answer.departmentName}')`;
     db.query(query, (err, res) => {
       if (err) throw err;
-      // return to the main menu
       promptUser();
     });
   });
