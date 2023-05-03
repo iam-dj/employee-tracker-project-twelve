@@ -100,6 +100,7 @@ function updateEmployeeRole() {
           message: "Enter the ID of the new role:",
           name: "roleId",
         },
+        
       ])
       .then((res) => {
         const employeeId = parseInt(res.employeeId);
@@ -136,6 +137,10 @@ function updateEmployeeRole() {
   }
 
   function addRole() {
+    db.query("SELECT name FROM department", function (err, results) {
+        if (err) throw err;
+    
+        const choices = results.map((result) => result.name);
     inquirer
       .prompt([
         {
@@ -152,7 +157,7 @@ function updateEmployeeRole() {
           type: "list",
           name: "department",
           message: "Which department does the new role belong to?",
-          choices: ['Sales','IT','Marketing','Operations','Finance','Customer Support'],  
+          choices: choices,  
         },
       ])
       .then((answers) => {
@@ -166,6 +171,7 @@ function updateEmployeeRole() {
           promptUser();
         });
       });
+    })
   }
   
 
@@ -194,6 +200,8 @@ function addEmployee() {
       if (err) throw err;
   
       const people = results.map((result) => result.boss);
+      people.push('null');
+  console.log(people);
   
       inquirer
         .prompt([
@@ -201,11 +209,23 @@ function addEmployee() {
             type: "input",
             name: "firstName",
             message: "Enter the employee's first name:",
+            validate: function(input) {
+                if (!input || !input.trim()) {
+                  return "Please enter a first name";
+                }
+                return true;
+              }
           },
           {
             type: "input",
             name: "lastName",
             message: "Enter the employee's last name:",
+            validate: function(input) {
+                if (!input || !input.trim()) {
+                  return "Please enter a last name";
+                }
+                return true;
+              }
           },
           {
             type: "list",
@@ -216,13 +236,14 @@ function addEmployee() {
           {
               type: "rawlist",
               name: "manager",
-              message: "Select your bosses name (Note the # is also their Manager ID)",
+              message: "Select your bosses name (Note the # is also the Manager ID) OR press ⬆️ to select null for all other choices",
               choices: people,
             },
             {
                 type: "input",
                 name: "managerId",
-                message: "Enter the employee's manager ID (if applicable):",
+                message: "Enter the employee's manager ID:",
+                when: (answers) => answers.manager !== 'null',
             },
         ])
         .then((answers) => {
@@ -233,6 +254,10 @@ function addEmployee() {
               throw err;
             }
             roleId = res[0].id;
+
+            if (answers.managerId == '' || answers.managerId == 0 || answers.managerId > people.length || /[a-zA-Z]/.test(answers.managerId)) {
+                answers.managerId = null;
+            }
             
             const query =
             "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
